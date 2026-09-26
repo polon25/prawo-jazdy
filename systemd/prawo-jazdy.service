@@ -1,0 +1,17 @@
+# The project directory and User below are filled in on install;
+# see README, "Running at boot".
+[Unit]
+Description=Prawo jazdy - theory exam practice
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=prawo-jazdy
+WorkingDirectory=/opt/prawo-jazdy
+ExecStart=/opt/prawo-jazdy/venv/bin/python -u /opt/prawo-jazdy/app.py
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
