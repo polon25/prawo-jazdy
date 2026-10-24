@@ -9,6 +9,8 @@ builds the question database (database.py) and serves the web page
     python3 app.py             prepare what's missing, then serve
     python3 app.py --prepare   only prepare, don't serve
     python3 app.py --update    also check gov.pl for newer files first
+    python3 app.py --set-password USER   set a user's password (asked for,
+                                         or read from stdin)
 """
 
 import argparse
@@ -43,13 +45,41 @@ def prepare(update=False):
              len(questions), unusable)
 
 
+def set_password(username):
+    import getpass
+    import userdb
+    if sys.stdin.isatty():
+        password = getpass.getpass("Nowe hasło dla %s: " % username)
+        if getpass.getpass("Powtórz hasło: ") != password:
+            sys.exit("Hasła się różnią.")
+    else:
+        password = sys.stdin.readline().rstrip("\n")
+    userdb.init()
+    conn = userdb.connect()
+    try:
+        stored = userdb.set_password(conn, username, password)
+    except userdb.Error as e:
+        sys.exit(str(e))
+    finally:
+        conn.close()
+    if not stored:
+        sys.exit("Nie ma użytkownika %s." % username)
+    print("Hasło użytkownika %s zmienione; jego logowania zostały "
+          "zakończone." % stored)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--prepare", action="store_true",
                         help="only prepare the data, don't serve")
     parser.add_argument("--update", action="store_true",
                         help="check gov.pl for newer files first")
+    parser.add_argument("--set-password", metavar="USER",
+                        help="set a user's password and exit")
     args = parser.parse_args()
+    if args.set_password:
+        os.makedirs(config.DATA_DIR, exist_ok=True)
+        return set_password(args.set_password)
     logging.basicConfig(
         level=logging.INFO, stream=sys.stdout,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s")

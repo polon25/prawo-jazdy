@@ -120,6 +120,23 @@ def create_user(conn, username, password):
     return {"id": cursor.lastrowid, "username": username}
 
 
+def set_password(conn, username, password):
+    """Sets a user's password and logs them out everywhere; returns the
+    username as stored, None if there's no such user."""
+    if len(password or "") < MIN_PASSWORD:
+        raise Error("Hasło musi mieć co najmniej %d znaków." % MIN_PASSWORD)
+    user = conn.execute("SELECT id, username FROM users WHERE "
+                        "username_key = ?",
+                        ((username or "").strip().casefold(),)).fetchone()
+    if not user:
+        return None
+    with conn:
+        conn.execute("UPDATE users SET password_hash = ? WHERE id = ?",
+                     (_hash_password(password), user["id"]))
+        conn.execute("DELETE FROM sessions WHERE user_id = ?", (user["id"],))
+    return user["username"]
+
+
 def check_login(conn, username, password):
     """Returns the user, or None if the name or password is wrong."""
     user = conn.execute(

@@ -81,6 +81,12 @@ cp .env.example .env        # optional: port, data directory, ffmpeg
 
 `app.py --prepare` only prepares the data, without serving.
 
+A forgotten password can be replaced (the user is logged out everywhere):
+
+```bash
+python3 app.py --set-password USER    # asks for it (or reads it from stdin)
+```
+
 ### The page
 
 Log in or create an account (just a username and password), then pick a
